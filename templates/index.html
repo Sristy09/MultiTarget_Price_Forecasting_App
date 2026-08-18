@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Overview — Pokhara Price Intelligence{% endblock %}
+{% block header %}Overview{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <p class="page-eyebrow">Dashboard</p>
+  <h1 class="page-title">Pokhara Market, at a glance</h1>
+  <p class="page-desc">
+    A 10-month Bikram Sambat panel of vegetable and fruit prices from the Pokhara wholesale
+    market — cleaned, feature-engineered, and forecast one month ahead with LightGBM.
+  </p>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-label">Products Tracked</div>
+    <div class="stat-value">{{ stats.n_products }}</div>
+    <div class="stat-foot">across {{ stats.n_categories }} categories</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Balanced Panel</div>
+    <div class="stat-value">{{ stats.n_balanced }}</div>
+    <div class="stat-foot">present in all {{ stats.n_months }} months</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Avg Market Price</div>
+    <div class="stat-value">Rs {{ stats.avg_price }}</div>
+    <div class="stat-foot">per unit, all products</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Best Model MAE</div>
+    <div class="stat-value">{{ stats.best_mae }}</div>
+    <div class="stat-foot">LightGBM · {{ stats.best_target }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Forecast Coverage</div>
+    <div class="stat-value">{{ stats.forecast_coverage }} / {{ stats.n_products }}</div>
+    <div class="stat-foot">every product forecast — none skipped</div>
+  </div>
+</div>
+
+{% if stats.low_confidence_n > 0 %}
+<div class="panel" style="border-style: dashed; margin-bottom: 22px;">
+  <div style="display:flex; align-items:center; gap:12px;">
+    <span style="font-size:20px;">△</span>
+    <div>
+      <strong>{{ stats.low_confidence_n }} products</strong> have fewer than 5 months of history and carry a
+      <span class="badge warn">low confidence</span> forecast — they're still included, using each product's own
+      last observed month rather than a shared calendar month.
+      <a href="{{ url_for('forecast', confidence='low') }}" style="text-decoration:underline; font-weight:600;">View them →</a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="two-col">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Model Comparison — Validation MAE</div>
+        <div class="panel-sub">Lower is better · Baseline vs Random Forest vs LightGBM</div>
+      </div>
+      <a href="{{ url_for('performance') }}" class="badge outline">Full report →</a>
+    </div>
+    <div class="chart-box h-320">
+      <canvas id="modelChart"></canvas>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Most Volatile Products</div>
+        <div class="panel-sub">By price-spread std. dev.</div>
+      </div>
+    </div>
+    <ul>
+      {% for p in top_volatile %}
+      <li class="region-bar-row">
+        <span class="region-name" title="{{ p.Product_Name }}">{{ p.Product_Name }}</span>
+        <span class="region-track">
+          <span class="region-fill" style="width: {{ (p.Price_Spread_STD / top_volatile[0].Price_Spread_STD * 100) | round(1) }}%;"></span>
+        </span>
+        <span class="region-val">{{ p.Price_Spread_STD | round(0) }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    <a href="{{ url_for('volatility') }}" class="btn ghost" style="margin-top:8px; width:100%; justify-content:center;">View all →</a>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <div>
+      <div class="panel-title">R² Score by Target &amp; Model</div>
+      <div class="panel-sub">Higher is better · How well each model explains price variance</div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Target</th>
+          <th class="num">Baseline MAE</th>
+          <th class="num">RF MAE</th>
+          <th class="num">LightGBM MAE</th>
+          <th class="num">Baseline R²</th>
+          <th class="num">RF R²</th>
+          <th class="num">LightGBM R²</th>
+          <th class="num">LightGBM Improvement</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in validation_summary %}
+        <tr>
+          <td><strong>{{ row.Target }}</strong></td>
+          <td class="num mono">{{ row['Baseline MAE'] }}</td>
+          <td class="num mono">{{ row['RF MAE'] }}</td>
+          <td class="num mono">{{ row['LightGBM MAE'] }}</td>
+          <td class="num mono">{{ row['Baseline R²'] }}</td>
+          <td class="num mono">{{ row['RF R²'] }}</td>
+          <td class="num mono">{{ row['LightGBM R²'] }}</td>
+          <td class="num mono">{{ row['LightGBM Improvement (%)'] }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const validationData = {{ validation_summary | tojson }};
+
+const ctx = document.getElementById('modelChart');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: validationData.map(r => r.Target.replace('_next', '')),
+    datasets: [
+      {
+        label: 'Baseline',
+        data: validationData.map(r => r['Baseline MAE']),
+        backgroundColor: PALETTE.gray300,
+        borderRadius: 5,
+      },
+      {
+        label: 'Random Forest',
+        data: validationData.map(r => r['RF MAE']),
+        backgroundColor: PALETTE.gray700,
+        borderRadius: 5,
+      },
+      {
+        label: 'LightGBM',
+        data: validationData.map(r => r['LightGBM MAE']),
+        backgroundColor: PALETTE.black,
+        borderRadius: 5,
+      },
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'top', align: 'end' } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: PALETTE.gray100 }, title: { display: true, text: 'MAE (Rs)' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+</script>
+{% endblock %}

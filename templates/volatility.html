@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Volatility — Pokhara Price Intelligence{% endblock %}
+{% block header %}Volatility{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <p class="page-eyebrow">Risk profile</p>
+  <h1 class="page-title">Price volatility by product</h1>
+  <p class="page-desc">Products ranked by the standard deviation of their monthly Min–Max price spread. Higher volatility products are typically harder for the models to forecast precisely.</p>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <div>
+      <div class="panel-title">Top 15 Most Volatile Products</div>
+      <div class="panel-sub">By price-spread standard deviation</div>
+    </div>
+  </div>
+  <div class="chart-box h-380"><canvas id="volChart"></canvas></div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <div class="panel-title">Full Volatility Table</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th class="num">Mean Spread</th>
+          <th class="num">Spread Std Dev</th>
+          <th class="num">Months</th>
+          <th class="num">RF Mean MAE</th>
+          <th class="num">LightGBM Mean MAE</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in volatile %}
+        <tr class="row-link" onclick="window.location='{{ url_for('product_detail', product_name=row.Product_Name) }}'">
+          <td><strong>{{ row.Product_Name.replace('_',' ') }}</strong></td>
+          <td class="num mono">{{ row.Mean_Price_Spread | round(1) if row.Mean_Price_Spread is not none else '—' }}</td>
+          <td class="num mono">{{ row.Price_Spread_STD | round(1) if row.Price_Spread_STD is not none else '—' }}</td>
+          <td class="num mono">{{ row.Months }}</td>
+          <td class="num mono">{{ row.RF_Mean_MAE | round(1) if row.RF_Mean_MAE else '—' }}</td>
+          <td class="num mono">{{ row.LightGBM_Mean_MAE | round(1) if row.LightGBM_Mean_MAE else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const volatile = {{ volatile | tojson }};
+const top15 = volatile.slice(0, 15);
+
+new Chart(document.getElementById('volChart'), {
+  type: 'bar',
+  data: {
+    labels: top15.map(r => r.Product_Name.replace('_',' ')),
+    datasets: [{
+      label: 'Spread Std Dev',
+      data: top15.map(r => r.Price_Spread_STD),
+      backgroundColor: PALETTE.black,
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { beginAtZero: true, grid: { color: PALETTE.gray100 } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+</script>
+{% endblock %}

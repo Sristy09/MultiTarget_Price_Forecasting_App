@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Products — Pokhara Price Intelligence{% endblock %}
+{% block header %}Products{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <p class="page-eyebrow">Catalog</p>
+  <h1 class="page-title">Browse products</h1>
+  <p class="page-desc">Latest recorded price for each product. Click any card to see its full price history, regional supply mix, and forecast.</p>
+</div>
+
+<div class="filter-bar">
+  <div class="search-box">
+    <input type="text" placeholder="Search products…" value="{{ search }}" data-live-search>
+  </div>
+  <div class="chip-group">
+    <span class="chip {{ 'active' if selected_category=='all' else '' }}" data-filter-chip="all" data-filter-key="category">All</span>
+    {% for c in categories %}
+    <span class="chip {{ 'active' if selected_category==c else '' }}" data-filter-chip="{{ c }}" data-filter-key="category">{{ c | capitalize }}</span>
+    {% endfor %}
+  </div>
+  <span class="badge outline" style="margin-left:auto;">{{ total }} products</span>
+</div>
+
+{% if products %}
+<div class="product-grid">
+  {% for p in products %}
+  <a href="{{ url_for('product_detail', product_name=p.Product_Name) }}" class="product-card">
+    <div class="pc-top">
+      <div>
+        <div class="pc-name">{{ p.Product_Name.replace('_', ' ') }}</div>
+        <div class="pc-meta">{{ p.month_name | capitalize }} · {{ p.Unit }}</div>
+      </div>
+      <span class="badge {{ 'dark' if p.Category=='vegetable' else '' }}">{{ p.Category }}</span>
+    </div>
+    <div class="pc-price-row">
+      <div>
+        <div class="pc-price">Rs {{ p.Avg_Price | round(0) if p.Avg_Price else '—' }}</div>
+        <div class="pc-range">{{ p.Min_Price | round(0) if p.Min_Price else '—' }} – {{ p.Max_Price | round(0) if p.Max_Price else '—' }}</div>
+      </div>
+      {% if p.is_balanced %}
+      <span class="badge ok">Full panel</span>
+      {% else %}
+      <span class="badge warn">Partial</span>
+      {% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="glyph">◌</div>
+  <p>No products match your filters.</p>
+</div>
+{% endif %}
+{% endblock %}

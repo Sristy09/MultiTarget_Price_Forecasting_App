@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Error Analysis — Pokhara Price Intelligence{% endblock %}
+{% block header %}Error Analysis{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <p class="page-eyebrow">Diagnostics</p>
+  <h1 class="page-title">Where the models struggle</h1>
+  <p class="page-desc">Breaking down prediction error by product category and by unit of sale, to spot systematic weaknesses.</p>
+</div>
+
+<div class="two-col">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Error by Category</div>
+        <div class="panel-sub">RF vs LightGBM MAE</div>
+      </div>
+    </div>
+    <div class="chart-box h-320"><canvas id="categoryChart"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Error by Unit</div>
+        <div class="panel-sub">RF vs LightGBM MAE, weighted by sample count</div>
+      </div>
+    </div>
+    <div class="chart-box h-320"><canvas id="unitChart"></canvas></div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">Category-wise Detail</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Category</th><th>Target</th><th class="num">RF MAE</th><th class="num">LightGBM MAE</th></tr></thead>
+        <tbody>
+          {% for row in category_error %}
+          <tr>
+            <td><span class="badge {{ 'dark' if row.Category=='vegetable' else '' }}">{{ row.Category }}</span></td>
+            <td class="mono">{{ row.Target }}</td>
+            <td class="num mono">{{ row['RF MAE'] }}</td>
+            <td class="num mono"><strong>{{ row['LightGBM MAE'] }}</strong></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">Unit-wise Detail</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Unit</th><th>Target</th><th class="num">RF MAE</th><th class="num">LightGBM MAE</th><th class="num">Samples</th></tr></thead>
+        <tbody>
+          {% for row in unit_error %}
+          <tr>
+            <td><span class="badge outline">{{ row.Unit }}</span></td>
+            <td class="mono">{{ row.Target }}</td>
+            <td class="num mono">{{ row['RF MAE'] }}</td>
+            <td class="num mono"><strong>{{ row['LightGBM MAE'] }}</strong></td>
+            <td class="num mono">{{ row.Samples }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const categoryError = {{ category_error | tojson }};
+const unitError = {{ unit_error | tojson }};
+
+function groupByTarget(data) {
+  const targets = [...new Set(data.map(r => r.Target))];
+  return targets;
+}
+
+const catTargets = groupByTarget(categoryError);
+const catLabels = [...new Set(categoryError.map(r => r.Category))];
+
+new Chart(document.getElementById('categoryChart'), {
+  type: 'bar',
+  data: {
+    labels: catLabels.map(c => c.charAt(0).toUpperCase() + c.slice(1)),
+    datasets: catTargets.flatMap((t, i) => [
+      {
+        label: t.replace('_next','') + ' (RF)',
+        data: catLabels.map(c => {
+          const row = categoryError.find(r => r.Category === c && r.Target === t);
+          return row ? row['RF MAE'] : null;
+        }),
+        backgroundColor: [PALETTE.gray300, PALETTE.gray200, '#d8d8d8'][i % 3],
+        borderRadius: 4,
+      },
+      {
+        label: t.replace('_next','') + ' (LGBM)',
+        data: catLabels.map(c => {
+          const row = categoryError.find(r => r.Category === c && r.Target === t);
+          return row ? row['LightGBM MAE'] : null;
+        }),
+        backgroundColor: [PALETTE.black, PALETTE.charcoal, PALETTE.gray700][i % 3],
+        borderRadius: 4,
+      }
+    ])
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } },
+    scales: { y: { beginAtZero: true, grid: { color: PALETTE.gray100 } }, x: { grid: { display: false } } }
+  }
+});
+
+const unitTargets = groupByTarget(unitError);
+const unitLabels = [...new Set(unitError.map(r => r.Unit))];
+
+new Chart(document.getElementById('unitChart'), {
+  type: 'bar',
+  data: {
+    labels: unitLabels,
+    datasets: unitTargets.flatMap((t, i) => [
+      {
+        label: t.replace('_next','') + ' (LGBM)',
+        data: unitLabels.map(u => {
+          const row = unitError.find(r => r.Unit === u && r.Target === t);
+          return row ? row['LightGBM MAE'] : null;
+        }),
+        backgroundColor: [PALETTE.black, PALETTE.charcoal, PALETTE.gray700][i % 3],
+        borderRadius: 4,
+      }
+    ])
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } },
+    scales: { y: { beginAtZero: true, grid: { color: PALETTE.gray100 } }, x: { grid: { display: false } } }
+  }
+});
+</script>
+{% endblock %}

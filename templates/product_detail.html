@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}{{ product_name.replace('_',' ') }} — Pokhara Price Intelligence{% endblock %}
+{% block header %}Product Detail{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('products') }}" class="back-link">← Back to products</a>
+
+<div class="detail-hero">
+  <div class="detail-title-block">
+    <h1>{{ product_name.replace('_', ' ') }}</h1>
+    <div class="detail-tags">
+      <span class="badge {{ 'dark' if category=='vegetable' else '' }}">{{ category }}</span>
+      <span class="badge outline">{{ unit }}</span>
+      {% if is_balanced %}
+      <span class="badge ok">Full 10-month panel</span>
+      {% else %}
+      <span class="badge warn">{{ n_months_present }} / 10 months present</span>
+      {% endif %}
+    </div>
+  </div>
+  {% if history %}
+  <div class="price-hero">
+    <div class="val">Rs {{ history[-1].Avg_Price | round(0) if history[-1].Avg_Price else '—' }}</div>
+    <div class="lbl">Latest avg. price · {{ history[-1].month_name | capitalize }}</div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="two-col">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Price History</div>
+        <div class="panel-sub">Min / Average / Max across the BS panel</div>
+      </div>
+    </div>
+    <div class="chart-box h-320">
+      <canvas id="priceHistoryChart"></canvas>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Supply by Region</div>
+        <div class="panel-sub">Latest recorded month</div>
+      </div>
+    </div>
+    {% if region_supply %}
+      {% set max_val = region_supply.values() | max %}
+      {% for region, val in region_supply.items() %}
+      <div class="region-bar-row">
+        <span class="region-name">{{ region }}</span>
+        <span class="region-track">
+          <span class="region-fill" style="width: {{ (val / max_val * 100) | round(1) }}%;"></span>
+        </span>
+        <span class="region-val">{{ val | round(0) }}</span>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty-state"><p>No regional supply data available.</p></div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid-2">
+  {% if forecast %}
+  {% set conf = forecast.n_months_present | confidence %}
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Next-Month Forecast</div>
+        <div class="panel-sub">
+          From {{ forecast.Last_Observed_Month_Name | capitalize }} (month #{{ forecast.Last_Observed_Month_Idx }})
+          → forecasting month #{{ forecast.Forecast_Month_Idx }}
+        </div>
+      </div>
+      <span class="badge {{ 'ok' if conf[0]=='high' else ('warn' if conf[0] in ['low','single'] else '') }}">{{ conf[1] }}</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Model</th><th class="num">Min</th><th class="num">Avg</th><th class="num">Max</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Baseline</td>
+            <td class="num mono">{{ forecast.Baseline_Min_Price if forecast.Baseline_Min_Price is not none else '—' }}</td>
+            <td class="num mono">{{ forecast.Baseline_Avg_Price if forecast.Baseline_Avg_Price is not none else '—' }}</td>
+            <td class="num mono">{{ forecast.Baseline_Max_Price if forecast.Baseline_Max_Price is not none else '—' }}</td>
+          </tr>
+          <tr><td>Random Forest</td><td class="num mono">{{ forecast.RF_Predicted_Min_Price }}</td><td class="num mono">{{ forecast.RF_Predicted_Avg_Price }}</td><td class="num mono">{{ forecast.RF_Predicted_Max_Price }}</td></tr>
+          <tr><td><strong>LightGBM</strong></td><td class="num mono"><strong>{{ forecast.LightGBM_Predicted_Min_Price }}</strong></td><td class="num mono"><strong>{{ forecast.LightGBM_Predicted_Avg_Price }}</strong></td><td class="num mono"><strong>{{ forecast.LightGBM_Predicted_Max_Price }}</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    {% if forecast.Baseline_Min_Price is none %}
+    <p class="pc-meta" style="margin-top:10px;">This product has only one recorded month, so there's no prior price to build a baseline from. RF/LightGBM estimates still use volume, spread, and seasonal signals.</p>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="panel">
+    <div class="panel-title" style="margin-bottom: 8px;">Next-Month Forecast</div>
+    <div class="empty-state"><p>No forecast available for this product.</p></div>
+  </div>
+  {% endif %}
+
+  {% if volatility %}
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Volatility Profile</div>
+        <div class="panel-sub">Price spread stability</div>
+      </div>
+    </div>
+    <div class="stat-grid" style="margin-bottom:0;">
+      <div class="stat-card">
+        <div class="stat-label">Mean Spread</div>
+        <div class="stat-value small">{{ 'Rs ' ~ (volatility.Mean_Price_Spread | round(1)) if volatility.Mean_Price_Spread is not none else '—' }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Spread Std Dev</div>
+        <div class="stat-value small">{{ volatility.Price_Spread_STD | round(1) if volatility.Price_Spread_STD is not none else '—' }}</div>
+      </div>
+      {% if volatility.RF_Mean_MAE is not none %}
+      <div class="stat-card">
+        <div class="stat-label">RF Mean MAE</div>
+        <div class="stat-value small">{{ volatility.RF_Mean_MAE | round(1) }}</div>
+      </div>
+      {% endif %}
+      {% if volatility.LightGBM_Mean_MAE is not none %}
+      <div class="stat-card">
+        <div class="stat-label">LightGBM Mean MAE</div>
+        <div class="stat-value small">{{ volatility.LightGBM_Mean_MAE | round(1) }}</div>
+      </div>
+      {% endif %}
+    </div>
+    {% if volatility.Mean_Price_Spread is none %}
+    <p class="pc-meta" style="margin-top:10px;">Not enough historical rows for this product to compute a spread trend.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const history = {{ history | tojson }};
+
+const ctx = document.getElementById('priceHistoryChart');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: history.map(h => (h.month_name || '').charAt(0).toUpperCase() + (h.month_name || '').slice(1)),
+    datasets: [
+      {
+        label: 'Max',
+        data: history.map(h => h.Max_Price),
+        borderColor: PALETTE.gray300,
+        backgroundColor: 'rgba(0,0,0,0.02)',
+        borderWidth: 1.5,
+        pointRadius: 2,
+        tension: 0.35,
+        fill: '+1',
+      },
+      {
+        label: 'Average',
+        data: history.map(h => h.Avg_Price),
+        borderColor: PALETTE.black,
+        backgroundColor: 'rgba(0,0,0,0.05)',
+        borderWidth: 2.5,
+        pointRadius: 3,
+        pointBackgroundColor: PALETTE.black,
+        tension: 0.35,
+        fill: false,
+      },
+      {
+        label: 'Min',
+        data: history.map(h => h.Min_Price),
+        borderColor: PALETTE.gray500,
+        borderWidth: 1.5,
+        borderDash: [4,3],
+        pointRadius: 2,
+        tension: 0.35,
+        fill: false,
+      },
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: { legend: { position: 'top', align: 'end' } },
+    scales: {
+      y: { grid: { color: PALETTE.gray100 }, title: { display: true, text: 'Price (Rs)' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+</script>
+{% endblock %}

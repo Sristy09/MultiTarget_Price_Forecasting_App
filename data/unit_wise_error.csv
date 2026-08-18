@@ -1,0 +1,13 @@
+Unit,Target,RF MAE,LightGBM MAE,Samples
+kg,Min_Price_next,34.44,32.01,42
+kg,Avg_Price_next,43.19,39.92,42
+kg,Max_Price_next,49.24,37.98,42
+dozen,Min_Price_next,13.18,1.72,1
+dozen,Avg_Price_next,10.15,4.05,1
+dozen,Max_Price_next,44.11,59.48,1
+mutha,Min_Price_next,19.76,11.37,3
+mutha,Avg_Price_next,29.33,15.34,3
+mutha,Max_Price_next,26.03,24.15,3
+nos,Min_Price_next,6.93,6.03,2
+nos,Avg_Price_next,0.36,9.31,2
+nos,Max_Price_next,6.7,20.29,2

@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Model Performance — Pokhara Price Intelligence{% endblock %}
+{% block header %}Model Performance{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <p class="page-eyebrow">Validation · Month 9 holdout</p>
+  <h1 class="page-title">How the models stack up</h1>
+  <p class="page-desc">Baseline (persistence), Random Forest, and a tuned LightGBM regressor, evaluated on held-out Month 9 data across three price targets.</p>
+</div>
+
+<div class="two-col">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">MAE by Target</div>
+        <div class="panel-sub">Mean Absolute Error, in Rupees</div>
+      </div>
+    </div>
+    <div class="chart-box h-320"><canvas id="maeChart"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">R² by Target</div>
+        <div class="panel-sub">Variance explained</div>
+      </div>
+    </div>
+    <div class="chart-box h-320"><canvas id="r2Chart"></canvas></div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <div>
+      <div class="panel-title">Full Validation Metrics</div>
+      <div class="panel-sub">All models, all targets</div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Target</th>
+          <th class="num">Baseline MAE</th><th class="num">RF MAE</th><th class="num">LightGBM MAE</th>
+          <th class="num">Baseline RMSE</th><th class="num">RF RMSE</th><th class="num">LightGBM RMSE</th>
+          <th class="num">RF Improvement</th><th class="num">LightGBM Improvement</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in validation_summary %}
+        <tr>
+          <td><strong>{{ row.Target }}</strong></td>
+          <td class="num mono">{{ row['Baseline MAE'] }}</td>
+          <td class="num mono">{{ row['RF MAE'] }}</td>
+          <td class="num mono">{{ row['LightGBM MAE'] }}</td>
+          <td class="num mono">{{ row['Baseline RMSE'] }}</td>
+          <td class="num mono">{{ row['RF RMSE'] }}</td>
+          <td class="num mono">{{ row['LightGBM RMSE'] }}</td>
+          <td class="num mono">{{ row['RF Improvement (%)'] }}%</td>
+          <td class="num mono"><strong>{{ row['LightGBM Improvement (%)'] }}%</strong></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">LightGBM — Tuned Hyperparameters</div>
+        <div class="panel-sub">Selected via search on validation MAE</div>
+      </div>
+    </div>
+    <div class="param-list">
+      {% for k, v in lgbm_params.items() %}
+      <div class="param-item">
+        <div class="param-key">{{ k }}</div>
+        <div class="param-val">{{ v }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Actual vs Predicted</div>
+        <div class="panel-sub">Avg Price · Month 9 validation set</div>
+      </div>
+    </div>
+    <div class="chart-box h-260"><canvas id="scatterChart"></canvas></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const validationData = {{ validation_summary | tojson }};
+const valPreds = {{ val_preds | tojson }};
+
+new Chart(document.getElementById('maeChart'), {
+  type: 'bar',
+  data: {
+    labels: validationData.map(r => r.Target.replace('_next','')),
+    datasets: [
+      { label: 'Baseline', data: validationData.map(r => r['Baseline MAE']), backgroundColor: PALETTE.gray300, borderRadius: 5 },
+      { label: 'Random Forest', data: validationData.map(r => r['RF MAE']), backgroundColor: PALETTE.gray700, borderRadius: 5 },
+      { label: 'LightGBM', data: validationData.map(r => r['LightGBM MAE']), backgroundColor: PALETTE.black, borderRadius: 5 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top', align: 'end' } },
+    scales: { y: { beginAtZero: true, grid: { color: PALETTE.gray100 } }, x: { grid: { display: false } } }
+  }
+});
+
+new Chart(document.getElementById('r2Chart'), {
+  type: 'bar',
+  data: {
+    labels: validationData.map(r => r.Target.replace('_next','')),
+    datasets: [
+      { label: 'Baseline', data: validationData.map(r => r['Baseline R²']), backgroundColor: PALETTE.gray300, borderRadius: 5 },
+      { label: 'Random Forest', data: validationData.map(r => r['RF R²']), backgroundColor: PALETTE.gray700, borderRadius: 5 },
+      { label: 'LightGBM', data: validationData.map(r => r['LightGBM R²']), backgroundColor: PALETTE.black, borderRadius: 5 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top', align: 'end' } },
+    scales: { y: { grid: { color: PALETTE.gray100 } }, x: { grid: { display: false } } }
+  }
+});
+
+new Chart(document.getElementById('scatterChart'), {
+  type: 'scatter',
+  data: {
+    datasets: [{
+      label: 'Products',
+      data: valPreds.map(r => ({ x: r.Actual_Avg_Price_next, y: r.LightGBM_Avg_Price_next })),
+      backgroundColor: PALETTE.black,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `Actual ${ctx.parsed.x} → Predicted ${ctx.parsed.y}`
+        }
+      }
+    },
+    scales: {
+      x: { title: { display: true, text: 'Actual Avg Price' }, grid: { color: PALETTE.gray100 } },
+      y: { title: { display: true, text: 'Predicted Avg Price' }, grid: { color: PALETTE.gray100 } },
+    }
+  }
+});
+</script>
+{% endblock %}

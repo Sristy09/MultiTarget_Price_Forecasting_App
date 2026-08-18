@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Pokhara Price Intelligence{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<script src="{{ url_for('static', filename='js/vendor/chart.umd.js') }}"></script>
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">P</div>
+      <div class="brand-text">
+        <span class="brand-title">Pokhara</span>
+        <span class="brand-sub">Price Intelligence</span>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="{{ url_for('home') }}" class="nav-link {{ 'active' if active=='home' else '' }}">
+        <span class="nav-ico">◆</span> Overview
+      </a>
+      <a href="{{ url_for('products') }}" class="nav-link {{ 'active' if active=='products' else '' }}">
+        <span class="nav-ico">▤</span> Products
+      </a>
+      <a href="{{ url_for('forecast') }}" class="nav-link {{ 'active' if active=='forecast' else '' }}">
+        <span class="nav-ico">↗</span> Forecast
+      </a>
+      <a href="{{ url_for('performance') }}" class="nav-link {{ 'active' if active=='performance' else '' }}">
+        <span class="nav-ico">◐</span> Model Performance
+      </a>
+      <a href="{{ url_for('errors') }}" class="nav-link {{ 'active' if active=='errors' else '' }}">
+        <span class="nav-ico">△</span> Error Analysis
+      </a>
+      <a href="{{ url_for('volatility') }}" class="nav-link {{ 'active' if active=='volatility' else '' }}">
+        <span class="nav-ico">≋</span> Volatility
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <p>Pokhara Market · BS 2082</p>
+      <p class="muted">10-month panel · 95 products</p>
+    </div>
+  </aside>
+
+  <div class="main-col">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">☰</button>
+      <div class="topbar-title">{% block header %}Overview{% endblock %}</div>
+      <div class="topbar-spacer"></div>
+    </header>
+
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

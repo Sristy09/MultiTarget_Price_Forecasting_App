@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Not Found — Pokhara Price Intelligence{% endblock %}
+{% block header %}Not Found{% endblock %}
+{% block content %}
+<div class="error-404">
+  <h1>404</h1>
+  <p>That product or page doesn't exist in the panel.</p>
+  <a href="{{ url_for('home') }}" class="btn">← Back to overview</a>
+</div>
+{% endblock %}

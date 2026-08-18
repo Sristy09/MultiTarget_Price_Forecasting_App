@@ -1,0 +1,4 @@
+Target,Baseline MAE,RF MAE,LightGBM MAE,Baseline RMSE,RF RMSE,LightGBM RMSE,Baseline R²,RF R²,LightGBM R²,RF Improvement (%),LightGBM Improvement (%)
+Min_Price_next,37.88,31.38,28.43,71.22,61.43,63.23,0.58,0.69,0.67,17.16,24.95
+Avg_Price_next,43.8,39.45,36.05,81.8,74.45,68.81,0.57,0.64,0.7,9.94,17.69
+Max_Price_next,51.47,45.94,37.29,93.16,78.09,62.63,0.52,0.66,0.78,10.75,27.56
