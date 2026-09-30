@@ -66,7 +66,7 @@
   </div>
 </div>
 
-<div class="two-col">
+<div class="two-col performance-bottom" style="grid-template-columns:1.25fr 1fr;">
   <div class="panel">
     <div class="panel-head">
       <div>
@@ -74,11 +74,11 @@
         <div class="panel-sub">Selected via search on validation MAE</div>
       </div>
     </div>
-    <div class="param-list">
+    <div class="param-list" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
       {% for k, v in lgbm_params.items() %}
-      <div class="param-item">
+      <div class="param-item" style="min-width:0;padding:14px 16px;">
         <div class="param-key">{{ k }}</div>
-        <div class="param-val">{{ v }}</div>
+        <div class="param-val" style="overflow-wrap:anywhere;word-break:break-word;">{{ v }}</div>
       </div>
       {% endfor %}
     </div>
@@ -108,7 +108,7 @@ new Chart(document.getElementById('maeChart'), {
     datasets: [
       { label: 'Baseline', data: validationData.map(r => r['Baseline MAE']), backgroundColor: PALETTE.gray300, borderRadius: 5 },
       { label: 'Random Forest', data: validationData.map(r => r['RF MAE']), backgroundColor: PALETTE.gray700, borderRadius: 5 },
-      { label: 'LightGBM', data: validationData.map(r => r['LightGBM MAE']), backgroundColor: PALETTE.black, borderRadius: 5 },
+      { label: 'LightGBM', data: validationData.map(r => r['LightGBM MAE']), backgroundColor: PALETTE.black, borderRadius: 5 }
     ]
   },
   options: {
@@ -125,7 +125,7 @@ new Chart(document.getElementById('r2Chart'), {
     datasets: [
       { label: 'Baseline', data: validationData.map(r => r['Baseline R²']), backgroundColor: PALETTE.gray300, borderRadius: 5 },
       { label: 'Random Forest', data: validationData.map(r => r['RF R²']), backgroundColor: PALETTE.gray700, borderRadius: 5 },
-      { label: 'LightGBM', data: validationData.map(r => r['LightGBM R²']), backgroundColor: PALETTE.black, borderRadius: 5 },
+      { label: 'LightGBM', data: validationData.map(r => r['LightGBM R²']), backgroundColor: PALETTE.black, borderRadius: 5 }
     ]
   },
   options: {
@@ -143,7 +143,7 @@ new Chart(document.getElementById('scatterChart'), {
       data: valPreds.map(r => ({ x: r.Actual_Avg_Price_next, y: r.LightGBM_Avg_Price_next })),
       backgroundColor: PALETTE.black,
       pointRadius: 4,
-      pointHoverRadius: 6,
+      pointHoverRadius: 6
     }]
   },
   options: {
@@ -158,7 +158,7 @@ new Chart(document.getElementById('scatterChart'), {
     },
     scales: {
       x: { title: { display: true, text: 'Actual Avg Price' }, grid: { color: PALETTE.gray100 } },
-      y: { title: { display: true, text: 'Predicted Avg Price' }, grid: { color: PALETTE.gray100 } },
+      y: { title: { display: true, text: 'Predicted Avg Price' }, grid: { color: PALETTE.gray100 } }
     }
   }
 });
