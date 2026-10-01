@@ -1,13 +1,13 @@
-Unit,Target,RF MAE,LightGBM MAE,Samples
-kg,Min_Price_next,33.34,32.54,42
-kg,Avg_Price_next,42.58,39.09,42
-kg,Max_Price_next,47.84,37.74,42
-dozen,Min_Price_next,17.81,0.67,1
-dozen,Avg_Price_next,14.13,5.8,1
-dozen,Max_Price_next,44.58,56.59,1
-mutha,Min_Price_next,17.63,10.6,3
-mutha,Avg_Price_next,26.6,17.96,3
-mutha,Max_Price_next,29.36,23.81,3
-nos,Min_Price_next,5.04,5.86,2
-nos,Avg_Price_next,0.74,4.11,2
-nos,Max_Price_next,7.37,15.16,2
+Unit,Target,RF MAE,LightGBM MAE,LightGBM MAPE (%),Samples
+dozen,Min_Price_next,7.73,18.36,13.11,1
+dozen,Avg_Price_next,18.12,18.85,10.76,1
+dozen,Max_Price_next,33.95,58.1,23.81,1
+kg,Min_Price_next,34.71,32.74,39.96,43
+kg,Avg_Price_next,42.16,39.76,26.41,43
+kg,Max_Price_next,46.19,40.59,20.82,43
+mutha,Min_Price_next,16.54,12.91,31.48,3
+mutha,Avg_Price_next,29.05,16.79,38.07,3
+mutha,Max_Price_next,27.34,23.1,34.53,3
+nos,Min_Price_next,8.97,4.27,2.82,2
+nos,Avg_Price_next,3.97,8.65,5.47,2
+nos,Max_Price_next,7.53,19.52,11.69,2
